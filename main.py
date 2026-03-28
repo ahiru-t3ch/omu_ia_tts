@@ -3,10 +3,13 @@ from fastapi.responses import FileResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from kokoro import KPipeline
-from models.TTSRequest import TTSRequest
-from utils.tts_utils import validate_text, generate_audio
+
 from pathlib import Path
 import logging
+
+from models.TTSRequest import TTSRequest
+from utils.tts_utils import validate_text, generate_audio
+from config.voices import voices
 
 
 MAX_CHARS = 5000
@@ -40,19 +43,16 @@ logging.basicConfig(
 logger = logging.getLogger("omu_ia_tts")
 
 
+# One pipeline per lang_code; voice is passed when calling pipeline(..., voice=...).
 pipelines = {
-    "a": KPipeline(lang_code="a"), # American English
-    "e": KPipeline(lang_code="e"), # Spanish es
-    "f": KPipeline(lang_code="f"), # French fr-fr
+    lang_code: KPipeline(lang_code=lang_code) for lang_code in voices
 }
 
-
-# Position: 0 => female, 1 => male
-voices = {
-    "a": ["af_heart","am_adam"],
-    "e": ["ef_dora","em_alex"],
-    "f": ["ff_siwis", None], # no male voice for french
+VOICE_NAMES_BY_LANG = {
+    lang_code: frozenset(entry["voice_name"] for entry in voice_list)
+    for lang_code, voice_list in voices.items()
 }
+
 
 @app.get("/audio/{filename}")
 def get_audio(filename: str):
@@ -71,9 +71,18 @@ def tts(request: TTSRequest, http_request: Request, download: bool = Query(defau
         raise HTTPException(status_code=400, detail=error_messages)
 
     pipeline = pipelines.get(request.lang_code)
+
     if pipeline is None:
         logger.error(f"Invalid language code: {request.lang_code}")
         raise HTTPException(status_code=400, detail=f"Invalid language code: {request.lang_code}")
+
+    allowed_voices = VOICE_NAMES_BY_LANG.get(request.lang_code, frozenset())
+    if request.voice not in allowed_voices:
+        logger.error(f"Invalid voice for lang {request.lang_code}: {request.voice}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid voice '{request.voice}' for language '{request.lang_code}'",
+        )
 
     try:
         file_path, filename = generate_audio(

@@ -105,6 +105,7 @@ Auth: No Auth
 | File / folder | Role |
 |---------------|------|
 | `main.py` | FastAPI app: `/tts`, `/audio/{filename}` |
+| `config/voices.py` | Supported `lang_code` entries and allowed `voice_name` list per language |
 | `models/TTSRequest.py` | JSON body expected by `POST /tts` |
 | `utils/tts_utils.py` | Text validation; WAV files written under `audio/` |
 | `audio/` | Generated `.wav` files (gitignored) |
@@ -121,8 +122,9 @@ Responses use FastAPI’s `{ "detail": ... }` shape unless noted. Some `detail` 
 | **422** | `text` fails `Field(..., min_length=1)` (e.g. `""`) | Pydantic error on field `text` (too short / string_too_short). |
 | **422** | `text` empty in custom validator | `"Text is required"` (from `TTSRequest` validator). |
 | **400** | `validate_text()` in `utils/tts_utils.py` | List of strings, e.g. `"Text is required"` and/or `"Text too long: {len} > 5000"` (`5000` = `MAX_CHARS` in `main.py`). |
-| **400** | Unknown `lang_code` (not `a`, `e`, or `f`) | `"Invalid language code: {lang_code}"` |
-| **500** | Any exception inside `generate_audio()` (Kokoro, Hugging Face download, I/O, etc.) | `str(exception)` — e.g. Hugging Face **404** if `voice` does not exist: message mentions `https://huggingface.co/hexgrad/Kokoro-82M/resolve/main/voices/{voice}.pt`. |
+| **400** | Unknown `lang_code` (not a key in `config/voices.py` / no pipeline for that language) | `"Invalid language code: {lang_code}"` |
+| **400** | `voice` not listed for that `lang_code` in `config/voices.py` (`VOICE_NAMES_BY_LANG`) | `"Invalid voice '{voice}' for language '{lang_code}'"` (exact strings from the request appear in the message). |
+| **500** | Any exception inside `generate_audio()` (Kokoro, Hugging Face download, I/O, etc.) | `str(exception)` — e.g. Hugging Face **404** if `voice` does not exist on the hub (typo, removed voice): message often mentions `https://huggingface.co/hexgrad/Kokoro-82M/resolve/main/voices/{voice}.pt`. |
 | **404** | WAV not on disk after generation | `"File not found: {absolute_path}"` |
 
 ### `GET /audio/{filename}`
@@ -140,5 +142,5 @@ Responses use FastAPI’s `{ "detail": ... }` shape unless noted. Some `detail` 
 ### Notes
 
 - **`400` `detail`** for text validation can be a **list** of strings (several rules at once).
-- **`500` `detail`** is **not fixed**: it mirrors libraries (Kokoro, `huggingface_hub`, etc.). Use a valid `voice` from [VOICES.md](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md) and a `lang_code` that matches the language pipeline.
-- The `voices` map in `main.py` is **documentation-oriented** today; mismatching `lang_code` and `voice` may still produce a **500** from upstream instead of a dedicated **400**.
+- **`500` `detail`** is **not fixed**: it mirrors libraries (Kokoro, `huggingface_hub`, etc.). Keep `config/voices.py` aligned with [VOICES.md](https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md) so allowed `(lang_code, voice)` pairs are caught as **400** before generation; typos or voices removed upstream can still surface as **500** if they slip past the catalog.
+- Supported languages and voices are defined in **`config/voices.py`**; `main.py` builds one `KPipeline` per key and validates `voice` against that file.
