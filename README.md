@@ -9,7 +9,6 @@ Kokoro is an opensource TTS (Text To Speach) open-weight model.
 - [Install](#install)
 - [Run fast api server in local and test API](#run-fast-api-server-in-local-and-test-api)
 - [Endpoints](#endpoints)
-Endpoints
 - [Languages and Voicices](#languages-and-voices)
 - [Project Structure](#project-structure)
 - [API errors reference](#api-errors-reference)
@@ -53,7 +52,22 @@ docker run --rm -p 8000:8000 omu-ia-tts
 ```
 
 ## Endpoints
-Test with Bruno of Postman.
+Test with Bruno or Postman.
+
+### GET /health
+Light **liveness** check for load balancers, Coolify, and monitoring. Does not run Kokoro inference.
+
+**URL:**
+```
+http://127.0.0.1:8000/health
+```
+
+**Response:** `200` with JSON:
+```json
+{"status": "ok"}
+```
+
+Params: None · Body: None · Auth: None
 
 ### POST /tts
 Post url (param downlad added by Bruno or Postman):
@@ -118,7 +132,7 @@ Auth: No Auth
 ## Project Structure
 | File / folder | Role |
 |---------------|------|
-| `main.py` | FastAPI app: `/tts`, `/audio/{filename}` |
+| `main.py` | FastAPI app: `/health`, `/tts`, `/audio/{filename}` |
 | `config/voices.py` | Supported `lang_code` entries and allowed `voice_name` list per language |
 | `models/TTSRequest.py` | JSON body expected by `POST /tts` |
 | `utils/tts_utils.py` | Text validation; WAV files written under `audio/` |

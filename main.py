@@ -54,6 +54,12 @@ VOICE_NAMES_BY_LANG = {
 }
 
 
+@app.get("/health")
+def health():
+    """Light liveness probe for reverse proxies, Coolify, load balancers (no Kokoro inference)."""
+    return {"status": "ok"}
+
+
 @app.get("/audio/{filename}")
 def get_audio(filename: str):
     file_path = (AUDIO_DIR / filename).resolve()
