@@ -8,6 +8,8 @@ Kokoro is an opensource TTS (Text To Speach) open-weight model.
 - [Requirements](#requirements)
 - [Install](#install)
 - [Run fast api server in local and test API](#run-fast-api-server-in-local-and-test-api)
+- [Endpoints](#endpoints)
+Endpoints
 - [Languages and Voicices](#languages-and-voices)
 - [Project Structure](#project-structure)
 - [API errors reference](#api-errors-reference)
@@ -32,13 +34,25 @@ Kokoro is an opensource TTS (Text To Speach) open-weight model.
 ## Install
 Bellow command will install kokoro (the TTS model) and soundfile (to write audio files) with their required dependencies: 
 ```bash
+# Force CPU instead of GPU (GPU download very long same logic in Dockerfile)
+python -m pip install torch==2.10.0 --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 ```
 
 ## Run fast api server in local and test API
+
+### Local machine
 ```bash
 fastapi dev
 ```
+
+### Docker
+```bash
+docker build -t omu-ia-tts .
+docker run --rm -p 8000:8000 omu-ia-tts
+```
+
+## Endpoints
 Test with Bruno of Postman.
 
 ### POST /tts

@@ -1,0 +1,14 @@
+.git
+.gitignore
+.venv
+__pycache__
+*.py[cod]
+*.wav
+audio/*.wav
+.pytest_cache
+.mypy_cache
+.ruff_cache
+*.md
+.env
+.env.*
+!.env.example
