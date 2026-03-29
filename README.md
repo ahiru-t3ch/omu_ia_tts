@@ -9,7 +9,7 @@ Kokoro is an opensource TTS (Text To Speach) open-weight model.
 - [Install](#install)
 - [Run fast api server in local and test API](#run-fast-api-server-in-local-and-test-api)
 - [Endpoints](#endpoints)
-- [Languages and Voicices](#languages-and-voices)
+- [Languages and Voices](#languages-and-voices)
 - [Project Structure](#project-structure)
 - [API errors reference](#api-errors-reference)
 
@@ -138,12 +138,9 @@ Ex file_name: audio-20260328-113258-601da369.wav
 
 Params: None · Body: None
 
-## Languages and Voicices
-|Language|Code|Female voice|Male voice|
-|--------|----|------------|----------|
-|US EN   |a   |af_heart    |am_adam   |
-|ES      |e   |ef_dora     |em_alex   |
-|FR      |f   |ff_siwis    |None      |
+## Languages and Voices
+Defined into file:
+`config/voices.py`
 
 ## Project Structure
 | File / folder | Role |
