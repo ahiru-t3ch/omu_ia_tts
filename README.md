@@ -45,8 +45,10 @@ Do not commit the `.env` file, create it in you project and set it up like this:
 ```
 API_KEY=xxxxxxxxxxxxxxxxxxxxxx
 MAX_CHARS=5000
+KOKORO_REPO_ID=hexgrad/Kokoro-82M
 ```
-NB: in local dev you might enter the value you want.  
+For the api-key in local dev you might enter the value you want.  
+If `KOKORO_REPO_ID` is unset or empty, the app uses `hexgrad/Kokoro-82M`.
 
 ### Local machine
 ```bash

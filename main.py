@@ -16,6 +16,7 @@ import secrets
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 MAX_CHARS = int(os.getenv("MAX_CHARS"))
+KOKORO_REPO_ID = os.getenv("KOKORO_REPO_ID") or "hexgrad/Kokoro-82M"
 
 from models.TTSRequest import TTSRequest
 from utils.tts_utils import validate_text, generate_audio
@@ -54,7 +55,8 @@ logger = logging.getLogger("omu_ia_tts")
 
 # One pipeline per lang_code; voice is passed when calling pipeline(..., voice=...).
 pipelines = {
-    lang_code: KPipeline(lang_code=lang_code) for lang_code in voices
+    lang_code: KPipeline(lang_code=lang_code, repo_id=KOKORO_REPO_ID)
+    for lang_code in voices
 }
 
 VOICE_NAMES_BY_LANG = {
