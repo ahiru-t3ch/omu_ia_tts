@@ -1,11 +1,20 @@
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from kokoro import KPipeline
 
 from pathlib import Path
+from dotenv import load_dotenv
 import logging
+import os
+import secrets
+
+# Load keys from .env file
+# Keys need to be read befor project's imports
+# If they use env var it's better to read it here
+load_dotenv()
+API_KEY = os.getenv("API_KEY")
 
 from models.TTSRequest import TTSRequest
 from utils.tts_utils import validate_text, generate_audio
@@ -54,14 +63,34 @@ VOICE_NAMES_BY_LANG = {
 }
 
 
+def require_api_key(
+    x_api_key: str | None = Header(default=None, alias="X-API-Key"),
+    authorization: str | None = Header(default=None),
+) -> None:
+    if not API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Server API key is not configured",
+        )
+    provided = x_api_key
+    if provided is None and authorization:
+        parts = authorization.split(maxsplit=1)
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            provided = parts[1].strip() or None
+    if provided is None or len(provided) != len(API_KEY):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not secrets.compare_digest(provided, API_KEY):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
 @app.get("/health")
-def health():
+def health(_: None = Depends(require_api_key)):
     """Light liveness probe for reverse proxies, Coolify, load balancers (no Kokoro inference)."""
     return {"status": "ok"}
 
 
 @app.get("/audio/{filename}")
-def get_audio(filename: str):
+def get_audio(filename: str, _: None = Depends(require_api_key)):
     file_path = (AUDIO_DIR / filename).resolve()
     if not file_path.exists():
         logger.error(f"File not found: {file_path}") 
@@ -70,7 +99,7 @@ def get_audio(filename: str):
 
 
 @app.post("/tts")
-def tts(request: TTSRequest, http_request: Request, download: bool = Query(default=False)):
+def tts(request: TTSRequest, http_request: Request, download: bool = Query(default=False), _: None = Depends(require_api_key)):
     error_messages = validate_text(request.text, MAX_CHARS)
     if len(error_messages) > 0:
         logger.error(f"Validation errors: {error_messages}")

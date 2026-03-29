@@ -40,6 +40,12 @@ pip install -r requirements.txt
 
 ## Run fast api server in local and test API
 
+### .env
+```
+API_KEY=xxxxxxxxxxxxxxxxxxxxxx
+```
+NB: in local dev you might enter the value you want.  
+
 ### Local machine
 ```bash
 fastapi dev
@@ -48,11 +54,24 @@ fastapi dev
 ### Docker
 ```bash
 docker build -t omu-ia-tts .
-docker run --rm -p 8000:8000 omu-ia-tts
+docker run --rm -p 8000:8000 --env-file .env omu-ia-tts
 ```
 
 ## Endpoints
 Test with Bruno or Postman.
+
+### Config for all endpoints
+Choose "X-API-Key" in "Headers" or "Bearer Token" in Auth for Authentication.  
+Use the same api-key you entered into the .env file.
+
+#### Headers
+|Name        |Value           |
+|------------|----------------|
+|Content-Type|application/json|
+|X-API-Key   |api-key         |
+
+#### Auth (if X-API-Key not in "Headers")
+Use Bearer Token and enter the "api-key"
 
 ### GET /health
 Light **liveness** check for load balancers, Coolify, and monitoring. Does not run Kokoro inference.
@@ -67,7 +86,9 @@ http://127.0.0.1:8000/health
 {"status": "ok"}
 ```
 
-Params: None · Body: None · Auth: None
+**Errors:** see [Protected routes: authentication](#protected-routes-authentication) (`401`, `503`).
+
+Params: None · Body: None
 
 ### POST /tts
 Post url (param downlad added by Bruno or Postman):
@@ -94,13 +115,6 @@ Body:
 }
 ```
 
-Headers:
-|Name        |Value           |
-|------------|----------------|
-|Content-Type|application/json|
-
-Auth: No Auth
-
 ### GET /audio/{filename}
 Get audio file is in the API response.  
 
@@ -111,16 +125,9 @@ http://127.0.0.1:8000/audio/{file_name}
 
 Ex file_name: audio-20260328-113258-601da369.wav 
 
-Params: None  
+**Errors:** same authentication errors as [`GET /health`](#get-health). Other errors: [API errors reference](#api-errors-reference) (`404`).
 
-Body: None  
-
-Headers:
-|Name        |Value           |
-|------------|----------------|
-|Content-Type|application/json|
-
-Auth: No Auth
+Params: None · Body: None
 
 ## Languages and Voicices
 |Language|Code|Female voice|Male voice|
@@ -142,10 +149,21 @@ Auth: No Auth
 
 Responses use FastAPI’s `{ "detail": ... }` shape unless noted. Some `detail` values are **dynamic** (paths, counts, upstream messages).
 
+### Protected routes: authentication
+
+Applies to **`GET /health`**, **`GET /audio/{filename}`**, and **`POST /tts`**.  
+These routes require the **`X-API-Key`** header or **`Authorization: Bearer`** with the same value as `API_KEY`. Missing key, wrong key, or wrong length uses the same response so clients cannot distinguish the reason.
+
+| HTTP | When | `detail` |
+|------|------|----------|
+| **401** | No key, invalid key, or `Authorization` not `Bearer …` | `"Unauthorized"` |
+| **503** | Server started without `API_KEY` in the environment (empty or unset after `load_dotenv()` / container env) | `"Server API key is not configured"` |
+
 ### `POST /tts`
 
 | HTTP | When | Typical `detail` |
 |------|------|-------------------|
+| **401** / **503** | Authentication / server config | Same as [Protected routes: authentication](#protected-routes-authentication). |
 | **422** | JSON body invalid before the route runs (Pydantic) | Object with `detail` (list of Pydantic errors) and `message`: `"Invalid request payload"` (see global handler below). |
 | **422** | `text` fails `Field(..., min_length=1)` (e.g. `""`) | Pydantic error on field `text` (too short / string_too_short). |
 | **422** | `text` empty in custom validator | `"Text is required"` (from `TTSRequest` validator). |
@@ -159,6 +177,7 @@ Responses use FastAPI’s `{ "detail": ... }` shape unless noted. Some `detail` 
 
 | HTTP | When | Typical `detail` |
 |------|------|-------------------|
+| **401** / **503** | Authentication / server config | Same as [Protected routes: authentication](#protected-routes-authentication). |
 | **404** | File missing under `audio/` (or path does not exist) | `"File not found: {absolute_path}"` |
 
 ### Global: invalid JSON / wrong types (any route)
