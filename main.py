@@ -15,13 +15,13 @@ import secrets
 # If they use env var it's better to read it here
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
+MAX_CHARS = int(os.getenv("MAX_CHARS"))
 
 from models.TTSRequest import TTSRequest
 from utils.tts_utils import validate_text, generate_audio
 from config.voices import voices
 
 
-MAX_CHARS = 5000
 AUDIO_DIR = Path("audio")
 
 

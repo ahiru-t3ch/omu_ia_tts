@@ -41,8 +41,10 @@ pip install -r requirements.txt
 ## Run fast api server in local and test API
 
 ### .env
+Do not commit the `.env` file, create it in you project and set it up like this:  
 ```
 API_KEY=xxxxxxxxxxxxxxxxxxxxxx
+MAX_CHARS=5000
 ```
 NB: in local dev you might enter the value you want.  
 
@@ -167,7 +169,7 @@ These routes require the **`X-API-Key`** header or **`Authorization: Bearer`** w
 | **422** | JSON body invalid before the route runs (Pydantic) | Object with `detail` (list of Pydantic errors) and `message`: `"Invalid request payload"` (see global handler below). |
 | **422** | `text` fails `Field(..., min_length=1)` (e.g. `""`) | Pydantic error on field `text` (too short / string_too_short). |
 | **422** | `text` empty in custom validator | `"Text is required"` (from `TTSRequest` validator). |
-| **400** | `validate_text()` in `utils/tts_utils.py` | List of strings, e.g. `"Text is required"` and/or `"Text too long: {len} > 5000"` (`5000` = `MAX_CHARS` in `main.py`). |
+| **400** | `validate_text()` in `utils/tts_utils.py` | List of strings, e.g. `"Text is required"` and/or `"Text too long: {len} > N"` where `N` is the configured limit (**`MAX_CHARS`**, from the environment after `load_dotenv()` in `main.py` — set in `.env` or your host / Coolify). |
 | **400** | Unknown `lang_code` (not a key in `config/voices.py` / no pipeline for that language) | `"Invalid language code: {lang_code}"` |
 | **400** | `voice` not listed for that `lang_code` in `config/voices.py` (`VOICE_NAMES_BY_LANG`) | `"Invalid voice '{voice}' for language '{lang_code}'"` (exact strings from the request appear in the message). |
 | **500** | Any exception inside `generate_audio()` (Kokoro, Hugging Face download, I/O, etc.) | `str(exception)` — e.g. Hugging Face **404** if `voice` does not exist on the hub (typo, removed voice): message often mentions `https://huggingface.co/hexgrad/Kokoro-82M/resolve/main/voices/{voice}.pt`. |
