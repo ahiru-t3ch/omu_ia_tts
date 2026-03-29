@@ -44,11 +44,16 @@ pip install -r requirements.txt
 Do not commit the `.env` file, create it in you project and set it up like this:  
 ```
 API_KEY=xxxxxxxxxxxxxxxxxxxxxx
-MAX_CHARS=5000
+HF_TOKEN=xxxxxxxxxxxxxxxxxxxxxx
 KOKORO_REPO_ID=hexgrad/Kokoro-82M
+MAX_CHARS=5000
 ```
-For the api-key in local dev you might enter the value you want.  
-If `KOKORO_REPO_ID` is unset or empty, the app uses `hexgrad/Kokoro-82M`.
+|Name|Info|
+|----|----|
+|API_KEY|In local dev you might enter the value you want|
+|HF_TOKEN|Define a read token in [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens), it's not mandatory|
+|KOKORO_REPO_ID|Avoid warning message with value hexgrad/Kokoro-82M in pipeline, if not defined then given value provided into the main.py|
+|MAX_CHARS|5000 seems a good number for the moment|
 
 ### Local machine
 ```bash
