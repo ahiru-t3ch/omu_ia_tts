@@ -47,6 +47,7 @@ API_KEY=xxxxxxxxxxxxxxxxxxxxxx
 HF_TOKEN=xxxxxxxxxxxxxxxxxxxxxx
 KOKORO_REPO_ID=hexgrad/Kokoro-82M
 MAX_CHARS=5000
+AUDIO_CACHE_MAX_MB=256
 ```
 |Name|Info|
 |----|----|
@@ -54,6 +55,7 @@ MAX_CHARS=5000
 |HF_TOKEN|Define a read token in [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens), it's not mandatory|
 |KOKORO_REPO_ID|Avoid warning message with value hexgrad/Kokoro-82M in pipeline, if not defined then given value provided into the main.py|
 |MAX_CHARS|5000 seems a good number for the moment|
+|`AUDIO_CACHE_MAX_MB`|**Required** for `POST /tts`: positive integer (MiB) capping total size of `audio/*.wav`; after each TTS, oldest files are removed until under this cap. Missing, `0`, or invalid → **503** on `POST /tts` (no new files saved). Example: `256`.|
 
 ### Local machine
 ```bash
@@ -169,7 +171,8 @@ These routes require the **`X-API-Key`** header or **`Authorization: Bearer`** w
 
 | HTTP | When | Typical `detail` |
 |------|------|-------------------|
-| **401** / **503** | Authentication / server config | Same as [Protected routes: authentication](#protected-routes-authentication). |
+| **401** / **503** | Authentication / server config | Same as [Protected routes: authentication](#protected-routes-authentication) (`503` only when `API_KEY` is unset — different `detail` than audio cache below). |
+| **503** | `AUDIO_CACHE_MAX_MB` missing, zero, or invalid | `"Audio cache is not configured: set AUDIO_CACHE_MAX_MB to a positive integer (MiB)."` |
 | **422** | JSON body invalid before the route runs (Pydantic) | Object with `detail` (list of Pydantic errors) and `message`: `"Invalid request payload"` (see global handler below). |
 | **422** | `text` fails `Field(..., min_length=1)` (e.g. `""`) | Pydantic error on field `text` (too short / string_too_short). |
 | **422** | `text` empty in custom validator | `"Text is required"` (from `TTSRequest` validator). |

@@ -18,8 +18,15 @@ API_KEY = os.getenv("API_KEY")
 MAX_CHARS = int(os.getenv("MAX_CHARS"))
 KOKORO_REPO_ID = os.getenv("KOKORO_REPO_ID") or "hexgrad/Kokoro-82M"
 
+_raw_audio_cap_mb = os.getenv("AUDIO_CACHE_MAX_MB", "0").strip()
+try:
+    _audio_cap_mb = int(_raw_audio_cap_mb) if _raw_audio_cap_mb else 0
+except ValueError:
+    _audio_cap_mb = 0
+AUDIO_CACHE_MAX_BYTES = _audio_cap_mb * 1024 * 1024 if _audio_cap_mb > 0 else 0
+
 from models.TTSRequest import TTSRequest
-from utils.tts_utils import validate_text, generate_audio
+from utils.tts_utils import enforce_audio_cache_limit, generate_audio, validate_text
 from config.voices import voices
 
 
@@ -52,6 +59,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("omu_ia_tts")
 
+if AUDIO_CACHE_MAX_BYTES <= 0:
+    logger.warning(
+        "AUDIO_CACHE_MAX_MB is missing, zero, or invalid; POST /tts will return 503 until set to a positive integer (MiB)."
+    )
 
 # One pipeline per lang_code; voice is passed when calling pipeline(..., voice=...).
 pipelines = {
@@ -121,6 +132,12 @@ def tts(request: TTSRequest, http_request: Request, download: bool = Query(defau
             detail=f"Invalid voice '{request.voice}' for language '{request.lang_code}'",
         )
 
+    if AUDIO_CACHE_MAX_BYTES <= 0:
+        raise HTTPException(
+            status_code=503,
+            detail="Audio cache is not configured: set AUDIO_CACHE_MAX_MB to a positive integer (MiB).",
+        )
+
     try:
         file_path, filename = generate_audio(
             request.text, 
@@ -130,6 +147,7 @@ def tts(request: TTSRequest, http_request: Request, download: bool = Query(defau
             pipeline,
             AUDIO_DIR
         )
+        enforce_audio_cache_limit(AUDIO_DIR, AUDIO_CACHE_MAX_BYTES)
     except Exception as e:
         logger.error(f"Error generating audio: {e}")
         raise HTTPException(status_code=500, detail=str(e))

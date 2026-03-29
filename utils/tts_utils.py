@@ -49,3 +49,32 @@ def generate_audio(
     sf.write(file_path, final_audio, 24000)
 
     return file_path, filename
+
+
+def enforce_audio_cache_limit(audio_dir: Path, max_bytes: int) -> None:
+    """Keep total size of *.wav under max_bytes by deleting oldest files first."""
+    if max_bytes <= 0:
+        return
+    audio_dir = audio_dir.resolve()
+    if not audio_dir.is_dir():
+        return
+    files = sorted(
+        (p for p in audio_dir.glob("*.wav") if p.is_file()),
+        key=lambda p: p.stat().st_mtime,
+    )
+    total = sum(p.stat().st_size for p in files)
+    while total > max_bytes and files:
+        if len(files) == 1:
+            logger.warning(
+                "AUDIO_CACHE_MAX_MB is smaller than a single WAV (%s bytes); not deleting last file",
+                total,
+            )
+            break
+        oldest = files.pop(0)
+        try:
+            sz = oldest.stat().st_size
+            oldest.unlink()
+            total -= sz
+            logger.info("Audio cache cap: removed %s (%s bytes left under cap)", oldest.name, total)
+        except OSError as e:
+            logger.error("Could not remove %s: %s", oldest, e)
