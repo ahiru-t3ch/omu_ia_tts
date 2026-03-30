@@ -20,9 +20,13 @@ RUN pip install --upgrade pip && \
 
 COPY . .
 
-RUN mkdir -p audio
+RUN mkdir -p audio && \
+    addgroup --system app && \
+    adduser --system --ingroup app appuser && \
+    chown -R appuser:app /app
 
 EXPOSE 8000
 
 # Models download to HF cache on first request (needs network unless cache is baked in).
+USER appuser
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
