@@ -1,0 +1,12 @@
+services:
+  omu-ia-tts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: omu-ia-tts:latest
+    container_name: omu-ia-tts
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

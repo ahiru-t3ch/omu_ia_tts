@@ -49,9 +49,11 @@ KOKORO_REPO_ID=hexgrad/Kokoro-82M
 MAX_CHARS=5000
 AUDIO_CACHE_MAX_MB=256
 ```
+You may user `.example.env` to test the project but do not use it in Prod.
+
 |Name|Info|
 |----|----|
-|API_KEY|In local dev you might enter the value you want|
+|API_KEY|In local dev you might enter the value you want. Generate: ```python -c "import secrets; print(secrets.token_urlsafe(32))"``` or ```openssl rand -base64 32```|
 |HF_TOKEN|Define a read token in [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens), it's not mandatory|
 |KOKORO_REPO_ID|Avoid warning message with value hexgrad/Kokoro-82M in pipeline, if not defined then given value provided into the main.py|
 |MAX_CHARS|5000 seems a good number for the moment|
@@ -66,6 +68,11 @@ fastapi dev
 ```bash
 docker build -t omu-ia-tts .
 docker run --rm -p 8000:8000 --env-file .env omu-ia-tts
+```
+
+### Docker Compose
+```bash
+docker compose up --build
 ```
 
 ## Endpoints
