@@ -22,11 +22,16 @@ COPY . .
 
 RUN mkdir -p audio && \
     addgroup --system app && \
-    adduser --system --ingroup app appuser && \
+    adduser --system --ingroup app --home /home/appuser appuser && \
+    mkdir -p /home/appuser/.cache/huggingface && \
     chown -R appuser:app /app
+
+RUN chown -R appuser:app /home/appuser
 
 EXPOSE 8000
 
 # Models download to HF cache on first request (needs network unless cache is baked in).
+ENV HOME=/home/appuser \
+    HF_HOME=/home/appuser/.cache/huggingface
 USER appuser
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
