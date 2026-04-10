@@ -77,10 +77,14 @@ Create a `.env` from `.example.env` (not committed). Compose reads it automatica
 docker compose up --build
 ```
 
+**Host port `8001`:** the compose file maps **`8001:8000`** so the API is reachable on the host at port **8001** (e.g. `http://127.0.0.1:8001/health`). Port **8000** stays the listen port **inside** the container. This avoids clashing with Coolify, which often binds **8000** on the VPS for its own UI. In Coolify, point the service / health check at the **container** port **8000** unless your stack explicitly uses the published host port.
+
 **Coolify (or any CI without `.env` in the repo):** define the same variables in the service environment (e.g. `API_KEY`, `MAX_CHARS`, `AUDIO_CACHE_MAX_MB`, optional `HF_TOKEN`, `KOKORO_REPO_ID`). No `env_file` is required in Git.
 
 ## Endpoints
 Test with Bruno or Postman.
+
+**Port:** examples below use **`8000`** (`fastapi dev` and `docker run`). If you use **Docker Compose** from this repo, use **`8001`** on the host (e.g. `http://127.0.0.1:8001/health`).
 
 ### Config for all endpoints
 Choose "X-API-Key" in "Headers" or "Bearer Token" in Auth for Authentication.  

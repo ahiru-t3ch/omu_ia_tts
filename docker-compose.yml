@@ -12,5 +12,5 @@ services:
       MAX_CHARS: ${MAX_CHARS:-5000}
       AUDIO_CACHE_MAX_MB: ${AUDIO_CACHE_MAX_MB:-256}
     ports:
-      - "8000:8000"
+      - "8001:8000"
     restart: unless-stopped
