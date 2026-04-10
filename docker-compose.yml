@@ -5,8 +5,12 @@ services:
       dockerfile: Dockerfile
     image: omu-ia-tts:latest
     container_name: omu-ia-tts
-    env_file:
-      - .env
+    environment:
+      API_KEY: ${API_KEY}
+      HF_TOKEN: ${HF_TOKEN:-}
+      KOKORO_REPO_ID: ${KOKORO_REPO_ID:-hexgrad/Kokoro-82M}
+      MAX_CHARS: ${MAX_CHARS:-5000}
+      AUDIO_CACHE_MAX_MB: ${AUDIO_CACHE_MAX_MB:-256}
     ports:
       - "8000:8000"
     restart: unless-stopped

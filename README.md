@@ -71,9 +71,13 @@ docker run --rm -p 8000:8000 --env-file .env omu-ia-tts
 ```
 
 ### Docker Compose
+Create a `.env` from `.example.env` (not committed). Compose reads it automatically for `${VAR}` substitution in `docker-compose.yml`.
+
 ```bash
 docker compose up --build
 ```
+
+**Coolify (or any CI without `.env` in the repo):** define the same variables in the service environment (e.g. `API_KEY`, `MAX_CHARS`, `AUDIO_CACHE_MAX_MB`, optional `HF_TOKEN`, `KOKORO_REPO_ID`). No `env_file` is required in Git.
 
 ## Endpoints
 Test with Bruno or Postman.
